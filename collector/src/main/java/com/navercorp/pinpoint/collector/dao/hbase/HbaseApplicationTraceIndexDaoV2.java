@@ -16,9 +16,6 @@
 
 package com.navercorp.pinpoint.collector.dao.hbase;
 
-import com.navercorp.pinpoint.collector.config.ScatterConfiguration;
-import com.navercorp.pinpoint.collector.dao.ApplicationTraceIndexDao;
-import com.navercorp.pinpoint.collector.util.CollectorUtils;
 import com.navercorp.pinpoint.common.buffer.AutomaticBuffer;
 import com.navercorp.pinpoint.common.buffer.Buffer;
 import com.navercorp.pinpoint.common.hbase.HbaseColumnFamily;
@@ -30,7 +27,6 @@ import com.navercorp.pinpoint.common.server.scatter.FuzzyRowKeyFactory;
 import com.navercorp.pinpoint.common.server.scatter.OneByteFuzzyRowKeyFactory;
 import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
 import com.navercorp.pinpoint.common.server.util.SpanUtils;
-
 import com.navercorp.pinpoint.common.util.BytesUtils;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import com.sematext.hbase.wd.AbstractRowKeyDistributor;
@@ -48,12 +44,12 @@ import static com.navercorp.pinpoint.common.util.BytesUtils.LONG_BYTE_LENGTH;
 
 /**
  * find traceids by application name
- * 
+ *
  * @author netspider
  * @author emeroad
  */
 @Repository
-public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
+public class HbaseApplicationTraceIndexDaoV2 {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -66,32 +62,24 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
     private final AbstractRowKeyDistributor rowKeyDistributor;
 
     private final FuzzyRowKeyFactory<Byte> fuzzyRowKeyFactory = new OneByteFuzzyRowKeyFactory();
-    private final ScatterConfiguration scatterConfiguration;
 
-    public HbaseApplicationTraceIndexDao(@Qualifier("asyncPutHbaseTemplate") HbaseOperations2 hbaseTemplate,
-                                         TableDescriptor<HbaseColumnFamily.ApplicationTraceIndexTrace> descriptor,
-                                         @Qualifier("applicationTraceIndexDistributor") AbstractRowKeyDistributor rowKeyDistributor,
-                                         AcceptedTimeService acceptedTimeService,
-                                         ScatterConfiguration scatterConfiguration) {
+    public HbaseApplicationTraceIndexDaoV2(@Qualifier("asyncPutHbaseTemplate") HbaseOperations2 hbaseTemplate,
+                                           TableDescriptor<HbaseColumnFamily.ApplicationTraceIndexTrace> descriptor,
+                                           @Qualifier("applicationTraceIndexDistributor") AbstractRowKeyDistributor rowKeyDistributor,
+                                           AcceptedTimeService acceptedTimeService) {
         this.hbaseTemplate = Objects.requireNonNull(hbaseTemplate, "hbaseTemplate");
         this.acceptedTimeService = Objects.requireNonNull(acceptedTimeService, "acceptedTimeService");
         this.rowKeyDistributor = Objects.requireNonNull(rowKeyDistributor, "rowKeyDistributor");
         this.descriptor = Objects.requireNonNull(descriptor, "descriptor");
-        this.scatterConfiguration = Objects.requireNonNull(scatterConfiguration, "scatterConfiguration");
     }
 
-    @Override
+//    @Override
     public void insert(final SpanBo span) {
         Objects.requireNonNull(span, "span");
 
         if (logger.isDebugEnabled()) {
-            logger.debug("insert ApplicationTraceIndex: {}", span);
+            logger.debug("insert ApplicationTraceIndexV2: {}", span);
         }
-
-        // Assert agentId
-        CollectorUtils.checkAgentId(span.getAgentId());
-        // Assert applicationName
-        CollectorUtils.checkApplicationName(span.getApplicationId());
 
         final Buffer buffer = new AutomaticBuffer(10 + HbaseTableConstants.AGENT_NAME_MAX_LEN);
         buffer.putVInt(span.getElapsed());
@@ -101,10 +89,9 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
 
         final long acceptedTime = acceptedTimeService.getAcceptedTime();
         final byte[] distributedKey = createRowKey(span, acceptedTime);
-
         final Put put = new Put(distributedKey);
 
-        put.addColumn(descriptor.getColumnFamilyName(), makeQualifier(span) , acceptedTime, value);
+        put.addColumn(descriptor.getColumnFamilyName(), makeQualifier(span), acceptedTime, value);
 
         final TableName applicationTraceIndexTableName = descriptor.getTableName();
         hbaseTemplate.asyncPut(applicationTraceIndexTableName, put);
@@ -116,40 +103,26 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
     }
 
     private byte[] createRowKey(SpanBo span, long acceptedTime) {
-        if (scatterConfiguration.getServerSideScan() == ScatterConfiguration.ServerSideScan.v2) {
-            return createRowKeyV2(span, acceptedTime);
-        }
-        return createRowKeyV1(span, acceptedTime);
-    }
-
-    private byte[] createRowKeyV1(SpanBo span, long acceptedTime) {
-        // distribute key evenly
-        final byte[] applicationTraceIndexRowKey = SpanUtils.getApplicationTraceIndexRowKey(span.getApplicationId(), acceptedTime);
-        return rowKeyDistributor.getDistributedKey(applicationTraceIndexRowKey);
-    }
-
-
-    private byte[] createRowKeyV2(SpanBo span, long acceptedTime) {
         // distribute key evenly
         final byte[] bApplicationName = BytesUtils.toBytes(span.getApplicationId());
-        byte fuzzyKey = fuzzyRowKeyFactory.getKey(span.getElapsed());
-        final byte[] applicationTraceIndexRowKey = newRowKey2(bApplicationName, APPLICATION_NAME_MAX_LEN, TimeUtils.reverseTimeMillis(acceptedTime), fuzzyKey);
+        byte fuzzyKey = fuzzyRowKeyFactory.getKey(acceptedTime);
+        final byte[] applicationTraceIndexRowKey = newRowKey(bApplicationName, APPLICATION_NAME_MAX_LEN, TimeUtils.reverseTimeMillis(acceptedTime), fuzzyKey);
         return rowKeyDistributor.getDistributedKey(applicationTraceIndexRowKey);
     }
 
-    byte[] newRowKey2(byte[] fixedBytes, int maxFixedLength, long l, byte fuzzySlotKey) {
+    static byte[] newRowKey(byte[] fixedBytes, int maxFixedLength, long l, byte fuzzySlotKey) {
         Objects.requireNonNull(fixedBytes, "fixedBytes");
         if (fixedBytes.length > maxFixedLength) {
             throw new IndexOutOfBoundsException("fixedBytes.length too big. length:" + fixedBytes.length);
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("fuzzySlotKey:{}", fuzzySlotKey);
-        }
+        Objects.requireNonNull(fuzzySlotKey, "fuzzySlotKey");
         int fuzzySlotSize = 1;
         byte[] rowKey = new byte[maxFixedLength + LONG_BYTE_LENGTH + fuzzySlotSize];
         BytesUtils.writeBytes(rowKey, 0, fixedBytes);
         BytesUtils.writeLong(l, rowKey, maxFixedLength);
-        rowKey[rowKey.length -1] = fuzzySlotKey;
+        BytesUtils.writeBytes(rowKey, maxFixedLength + LONG_BYTE_LENGTH, new byte[]{fuzzySlotKey});
         return rowKey;
     }
+
+
 }

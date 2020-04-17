@@ -48,6 +48,8 @@
 
     <bean id="collectorConfiguration" class="com.navercorp.pinpoint.collector.config.CollectorConfiguration"/>
 
+    <bean id="scatterConfiguration" class="com.navercorp.pinpoint.collector.config.ScatterConfiguration"/>
+
     <bean id="baseDataReceiverConfig" class="com.navercorp.pinpoint.collector.config.AgentBaseDataReceiverConfiguration"/>
 
     <bean id="statReceiverConfig" class="com.navercorp.pinpoint.collector.config.StatReceiverConfiguration"/>
