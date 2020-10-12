@@ -8,7 +8,6 @@ import com.navercorp.pinpoint.web.dao.TraceDao;
 import com.navercorp.pinpoint.web.scatter.DragArea;
 import com.navercorp.pinpoint.web.scatter.heatmap.HeatMap;
 import com.navercorp.pinpoint.web.scatter.heatmap.HeatMapBuilder;
-import com.navercorp.pinpoint.web.scatter.heatmap.Point;
 import com.navercorp.pinpoint.web.util.ListListUtils;
 import com.navercorp.pinpoint.web.vo.GetTraceInfo;
 import com.navercorp.pinpoint.web.vo.LimitedScanResult;

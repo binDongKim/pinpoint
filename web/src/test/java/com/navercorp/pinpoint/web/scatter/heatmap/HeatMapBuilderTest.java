@@ -2,12 +2,17 @@ package com.navercorp.pinpoint.web.scatter.heatmap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
 
 public class HeatMapBuilderTest {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Test
     public void axix() {
         HeatMapBuilder.AxisResolver resolver = new HeatMapBuilder.DefaultAxisResolver(100, 0, 1000);
@@ -37,10 +42,10 @@ public class HeatMapBuilderTest {
 
         HeatMapBuilder builder = HeatMapBuilder.newBuilder(0, 1000, 10, 0, 1000, 10);
 
-        builder.addDataPoint(new Point(1, 1));
-        builder.addDataPoint(new Point(1, 2));
+        builder.addDataPoint(1, 1, true);
+        builder.addDataPoint(1, 2, true);
 
-        builder.addDataPoint(new Point(101, 101));
+        builder.addDataPoint(101, 101, true);
 
         HeatMap heatMap = builder.build();
         List<Point> points = heatMap.getData();
@@ -59,8 +64,8 @@ public class HeatMapBuilderTest {
 
         HeatMapBuilder builder = HeatMapBuilder.newBuilder(0, 1000, 100, 0, 1000, 100);
 
-        builder.addDataPoint(new Point(1, 1));
-        builder.addDataPoint(new Point(1, 200));
+        builder.addDataPoint(1, 1, true);
+        builder.addDataPoint(1, 200, true);
 
         HeatMap heatMap = builder.build();
         List<Point> points = heatMap.getData();
@@ -72,5 +77,31 @@ public class HeatMapBuilderTest {
         Assert.assertEquals(20, points.get(1).getY());
 
 
+    }
+
+    @Test
+    public void index() {
+        HeatMapBuilder.AxisResolver resolver = new HeatMapBuilder.DefaultAxisResolver(10, 0, 1000);
+        long[] index = resolver.getIndex();
+        logger.debug("{}", Arrays.toString(index));
+
+        Assert.assertEquals(10, index.length);
+
+        Assert.assertEquals(0, index[0]);
+        Assert.assertEquals(500, index[5]);
+        Assert.assertEquals(900, index[9]);
+    }
+
+    @Test
+    public void index2() {
+        HeatMapBuilder.AxisResolver resolver = new HeatMapBuilder.DefaultAxisResolver(10, 500, 1000);
+        long[] index = resolver.getIndex();
+        logger.debug("{}", Arrays.toString(index));
+
+        Assert.assertEquals(10, index.length);
+
+        Assert.assertEquals(500, index[0]);
+        Assert.assertEquals(750, index[5]);
+        Assert.assertEquals(950, index[9]);
     }
 }

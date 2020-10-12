@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,8 +53,6 @@ public class HeatMapController {
 
         limit = LimitUtils.checkRange(limit);
 
-        StopWatch watch = new StopWatch();
-        watch.start("dragScatterArea");
         DragArea dragArea = DragArea.normalize(x1, x2, y1, y2);
 
         // TODO range check verification exception occurs. "from" is bigger than "to"
@@ -66,12 +63,6 @@ public class HeatMapController {
         if (logger.isDebugEnabled()) {
             logger.debug("dragScatterArea applicationName:{} dots:{}", applicationName, scatterData.getScanData().size());
         }
-        watch.stop();
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Fetch dragScatterArea time : {}ms", watch.getLastTaskTimeMillis());
-        }
-
 
         List<SpanBo> scanData = scatterData.getScanData();
         TransactionMetaDataViewModel transaciton = new TransactionMetaDataViewModel(scanData);
@@ -126,26 +117,45 @@ public class HeatMapController {
             return list;
         }
 
-        public long success() {
+        public long getSuccess() {
             return heatMap.getSuccess();
         }
 
-        public long fail() {
+        public long getFail() {
             return heatMap.getFail();
         }
+
+
+        public long getResultFrom() {
+            return heatMap.getOldestAcceptedTime();
+        }
+
+        public long getResultTo() {
+            return heatMap.getLatestAcceptedTime();
+        }
+
+        public long[] getXIndex() {
+            return heatMap.getXIndex();
+        }
+
+        public long getXTick() {
+            return heatMap.getXTick();
+        }
+
+        public long[] getYIndex() {
+            return heatMap.getYIndex();
+        }
+
+        public long getYTick() {
+            return heatMap.getYTick();
+        }
+
+
 
         @JsonUnwrapped
         public Status getStatus() {
             return status;
         }
-
-//        public long getResultFrom() {
-//            return scatter.getOldestAcceptedTime();
-//        }
-//
-//        public long getResultTo() {
-//            return scatter.getLatestAcceptedTime();
-//        }
 
     }
 }

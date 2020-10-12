@@ -15,13 +15,16 @@ public class HeatMapBuilder {
     private final AxisResolver xAxisResolver;
     private final AxisResolver yAxisResolver;
 
+    private long oldestAcceptedTime = Long.MAX_VALUE;
+    private long latestAcceptedTime = Long.MIN_VALUE;
+
     private Map<LongPair, IntegerPair> map = newMap();
 
     private Map<LongPair, IntegerPair> newMap() {
         return new HashMap<>(128);
     }
 
-    public static HeatMapBuilder newBuilder(long startX, long endX, long xSlot, long minY, long maxY, long ySlot) {
+    public static HeatMapBuilder newBuilder(long startX, long endX, int xSlot, long minY, long maxY, int ySlot) {
         AxisResolver xResolver = new DefaultAxisResolver(xSlot, startX, endX);
         AxisResolver yResolver = new DefaultAxisResolver(ySlot, minY, maxY);
         return new HeatMapBuilder(xResolver, yResolver);
@@ -35,6 +38,10 @@ public class HeatMapBuilder {
 
     public interface AxisResolver {
         long getIndex(long x);
+
+        long[] getIndex();
+
+        long getTick();
     }
 
     public static class DefaultAxisResolver implements AxisResolver {
@@ -42,12 +49,14 @@ public class HeatMapBuilder {
         private final long tick;
         private final long start;
         private final long range;
+        private final int slotNumber;
 
-        public DefaultAxisResolver(long slotNumber, long minY, long maxY) {
+        public DefaultAxisResolver(int slotNumber, long minY, long maxY) {
             this.modulate = 200;
             this.start = minY;
             this.range = maxY - minY;
             this.tick = range / slotNumber;
+            this.slotNumber = slotNumber;
         }
 
         public long getTick() {
@@ -63,12 +72,24 @@ public class HeatMapBuilder {
 
             return x / tick;
         }
+
+        @Override
+        public long[] getIndex() {
+            long[] index = new long[slotNumber];
+            for (int i = 0; i < slotNumber; i++) {
+                index[i] = (i  * tick) + start;
+            }
+            return index;
+        }
     }
 
     public void addDataPoint(long x, long y, boolean success) {
 
         final long xTick = xAxisResolver.getIndex(x);
         final long yTick = yAxisResolver.getIndex(y);
+
+        this.oldestAcceptedTime = Math.min(oldestAcceptedTime, x);
+        this.latestAcceptedTime = Math.max(latestAcceptedTime, x);
 
         final LongPair key = new LongPair(xTick, yTick);
         IntegerPair counter = this.map.computeIfAbsent(key, longPair -> new IntegerPair(0, 0));
@@ -87,6 +108,7 @@ public class HeatMapBuilder {
         long success = 0;
         long fail = 0;
 
+
         final List<Point> list = new ArrayList<>(copy.size());
         for (Map.Entry<LongPair, IntegerPair> entry : copy.entrySet()) {
             LongPair key = entry.getKey();
@@ -95,14 +117,19 @@ public class HeatMapBuilder {
             success += value.getFirst();
             fail += value.getSecond();
 
-            Point point = new Point(key.getFirst(), key.getSecond(), value.getFirst(), value.getSecond());
+            final long acceptedTime = key.getFirst();
+
+            Point point = new Point(acceptedTime, key.getSecond(), value.getFirst(), value.getSecond());
 
             list.add(point);
         }
         list.sort(COMPARATOR);
+        long[] xIndex = xAxisResolver.getIndex();
+        long xTick = xAxisResolver.getTick();
+        long[] yIndex = yAxisResolver.getIndex();
+        long yTick = yAxisResolver.getTick();
 
-
-        return new HeatMap(list, success, fail);
+        return new HeatMap(list, success, fail, oldestAcceptedTime, latestAcceptedTime, xIndex, xTick, yIndex, yTick);
     }
 
     private static final Comparator<Point> COMPARATOR = new Comparator<Point>() {
