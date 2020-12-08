@@ -64,11 +64,9 @@ export class ScatterChartComponent implements OnInit, OnDestroy, OnChanges {
             } else {
                 if (changes['timezone'] && changes['timezone'].currentValue) {
                     this.scatterChartInstance.setTimezone(this.timezone);
-                    this.scatterChartInstance.redraw();
                 }
                 if (changes['dateFormat'] && changes['dateFormat'].currentValue) {
                     this.scatterChartInstance.setDateFormat(this.dateFormat);
-                    this.scatterChartInstance.redraw();
                 }
             }
         }

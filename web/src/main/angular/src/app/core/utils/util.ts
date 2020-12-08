@@ -19,3 +19,15 @@ export function isThatType<T extends object>(obj: T | any, ...props: string[]): 
 export function isEmpty(obj: Object | Array<any>): boolean {
     return Array.isArray(obj) ? obj.length === 0 : Object.keys(obj).length === 0;
 }
+
+export function sumObjByKey(...objs: {[key: string]: any}[]): {[key: string]: any} {
+    return objs.reduce((acc: {[key: string]: any}, curr: {[key: string]: any}) => {
+        for (const key in curr) {
+            if (curr.hasOwnProperty(key)) {
+                acc[key] = (acc[key] || 0) + curr[key];
+            }
+        }
+
+        return acc;
+      }, {});
+}

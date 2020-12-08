@@ -257,6 +257,7 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
     }
 
     onApplySetting(params: any): void {
+        this.analyticsService.trackEvent(TRACKED_EVENT_LIST.CHANGE_Y_RANGE_ON_SCATTER);
         this.fromY = params.min;
         this.toY = params.max;
         this.scatterChartInteractionService.changeYRange({
@@ -266,6 +267,8 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
         });
         this.hideSettingPopup = true;
         this.webAppSettingDataService.setScatterY(this.instanceKey, { min: params.min, max: params.max });
+        this.reset({fromX: this.fromX, toX: this.toX});
+        this.getScatterData();
     }
 
     onCancelSetting(): void {

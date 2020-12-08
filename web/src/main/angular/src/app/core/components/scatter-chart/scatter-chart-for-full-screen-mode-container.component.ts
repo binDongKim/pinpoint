@@ -238,6 +238,8 @@ export class ScatterChartForFullScreenModeContainerComponent implements OnInit, 
         });
         this.onHideSetting();
         this.webAppSettingDataService.setScatterY(this.instanceKey, { min: params.min, max: params.max });
+        this.reset({fromX: this.fromX, toX: this.toX});
+        this.getScatterData();
     }
 
     onHideSetting(): void {
