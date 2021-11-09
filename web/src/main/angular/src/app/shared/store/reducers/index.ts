@@ -20,8 +20,10 @@ import * as chartLayout from './inspector-chart-layout-info.reducer';
 import * as transactionViewType from './transaction-view-type.reducer';
 import * as chartYMax from './chart-y-max.reducer';
 import * as language from './language.reducer';
+import * as hostGroupList from './host-group-list.reducer';
 import { IApplicationListState } from './application-list.reducer';
 import { IFavoriteApplicationListState } from './favorite-application-list.reducer';
+import { IHostGroupListState } from './host-group-list.reducer';
 
 export interface AppState {
     agentSelection: string;
@@ -48,15 +50,12 @@ export interface AppState {
     loadChartYMax: number;
     loadAvgMaxChartYMax: number;
     language: string;
-    // serverMapTargetSelectByList: any;
-    // updateFilterOfServerAndAgentList: string;
+    hostGroupList: IHostGroupListState;
 }
 
 export const STORE_KEY: {[key: string]: keyof AppState} = {
     AGENT_SELECTION: 'agentSelection',
     AGENT_SELECTION_FOR_SERVER_LIST: 'agentSelectionForServerList',
-    APPLICATION_LIST: 'applicationList',
-    FAVORITE_APPLICATION_LIST: 'favoriteApplicationList',
     DATE_FORMAT: 'dateFormat',
     SCATTER_CHART: 'scatterChart',
     SERVER_LIST: 'serverList',
@@ -104,7 +103,8 @@ export const reducers: ActionReducerMap<any> = {
     responseAvgMaxChartYMax: chartYMax.ResponseAvgMaxChartYMaxReducer,
     loadChartYMax: chartYMax.LoadChartYMaxReducer,
     loadAvgMaxChartYMax: chartYMax.LoadAvgMaxChartYMaxReducer,
-    language: language.Reducer
+    language: language.Reducer,
+    hostGroupList: hostGroupList.Reducer,
 };
 
 export const Actions = {

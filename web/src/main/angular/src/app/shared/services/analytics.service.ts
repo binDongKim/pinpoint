@@ -139,7 +139,10 @@ export enum TRACKED_EVENT_LIST {
     SWITCH_TRANSACTION_VIEW_TYPE_THROUGH_TAB = 'Switch Transaction View Type through Tab',
     OPEN_LOG_PAGE_THROUGH_TAB = 'Open Log Page through Tab',
     MOVE_NODE_IN_SERVER_MAP = 'Move Node in Server Map',
-    CHANGE_THEME = 'Change Theme'
+    CHANGE_THEME = 'Change Theme',
+    SELECT_HOST_GROUP = 'Select Host Group',
+    CLICK_RELOAD_HOST_GROUP_LIST_BUTTON = 'Click Reload Host Group List Button',
+    SELECT_HOST = 'Select Host',
 }
 
 @Injectable()
