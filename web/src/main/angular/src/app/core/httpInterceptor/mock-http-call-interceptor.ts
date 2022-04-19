@@ -3,7 +3,10 @@ import { HttpInterceptor, HttpEvent, HttpHandler, HttpRequest, HttpResponse, Htt
 import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
-// import data from './data.json';
+import hostGroup from './mock-data/host-group.json';
+import hostList from './mock-data/host-list.json';
+import metricDef from './mock-data/metric-definition-id.json';
+import metric from './mock-data/metric.json';
 
 const exceptionObjMock = {
     exception: {
@@ -26,13 +29,20 @@ export class MockHttpCallInterceptor implements HttpInterceptor {
         const apiName = url.match(/.*\/(.*)\.pinpoint/)[1];
 
         switch (apiName) {
+            case 'hostGroup':
+                return of(new HttpResponse({status: 200, body: hostGroup})).pipe(delay(500));
+            case 'host':
+                return of(new HttpResponse({status: 200, body: hostList})).pipe(delay(500));
+            case 'collectedMetricInfo':
+                return of(new HttpResponse({status: 200, body: metricDef})).pipe(delay(500));
+            case 'collectedMetricData':
             // case 'drag':
             // case 'transactionmetadata':
             // case 'getResponseTimeHistogramDataV2':
             // case 'transactionInfo':
                 // console.log('여기');
                 // return of(new HttpResponse({status: 200, body: exceptionObjMock})).pipe(delay(500));
-                // return of(new HttpResponse({status: 200, body: data})).pipe(delay(500));
+                return of(new HttpResponse({status: 200, body: metric})).pipe(delay(500));
                 // const error = new HttpErrorResponse({status: 501, url: 'https://test.com'});
                 // error.message = 'Error Occurred';
                 // return throwError();
