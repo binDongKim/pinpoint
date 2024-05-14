@@ -1,6 +1,6 @@
 import React from 'react';
 import { GetServerMap } from '@pinpoint-fe/constants';
-import { ResponseSummaryChart, ResponseAvgMaxChart, LoadChart, LoadChartProps } from '../Chart';
+import { ResponseSummaryChart, ResponseAvgMaxChart, LoadChart } from '../Chart';
 import { cn } from '../../lib';
 import { Separator } from '..';
 
@@ -92,19 +92,27 @@ export const ChartsBoard = ({
               <LoadChart
                 className="h-40"
                 title={<div className="flex items-center h-12 font-semibold">Load</div>}
-                datas={(colors: LoadChartProps['colors']) => {
-                  const keys = Object.keys(colors!);
+                colors={(() => {
+                  const chartColors = ['#34b994', '#51afdf', '#ffba00', '#e67f22', '#e95459'];
+                  const excludeKeys = ['Avg', 'Max', 'Sum', 'Tot'];
+                  const data = nodeData?.timeSeriesHistogram;
+                  const chartData = data?.filter(({ key }) => !excludeKeys.includes(key)) || [];
+
+                  return chartData.reduce((prev, curr, i) => {
+                    return { ...prev, [curr.key]: chartColors[i] };
+                  }, {});
+                })()}
+                datas={() => {
+                  const excludeKeys = ['Avg', 'Max', 'Sum', 'Tot'];
+                  const data = nodeData?.timeSeriesHistogram;
+                  const chartData = data?.filter(({ key }) => !excludeKeys.includes(key));
 
                   return {
-                    dates: nodeData?.timeSeriesHistogram?.[0]?.values?.map((v) => v[0]),
-                    ...keys.reduce((prev, curr) => {
-                      const matchedHistogram = nodeData?.timeSeriesHistogram?.find(
-                        ({ key }: { key: string }) => key === curr,
-                      );
-
+                    dates: data?.[0]?.values?.map((v) => v[0]),
+                    ...chartData?.reduce((prev, curr) => {
                       return {
                         ...prev,
-                        [curr]: matchedHistogram?.values?.map?.((v) => v[1]),
+                        [curr.key]: curr.values?.map?.((v) => v[1]),
                       };
                     }, {}),
                   };

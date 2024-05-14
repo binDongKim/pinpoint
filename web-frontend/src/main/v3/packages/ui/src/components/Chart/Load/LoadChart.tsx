@@ -1,4 +1,5 @@
 import 'billboard.js/dist/billboard.css';
+import './LoadChart.css';
 import React from 'react';
 import bb, { areaStep, ChartOptions } from 'billboard.js';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -29,28 +30,28 @@ export const LoadChart = ({
   datas = {
     dates: [],
   },
-  colors = {
-    '1s': '#34b994',
-    '3s': '#51afdf',
-    '5s': '#ffba00',
-    Slow: '#e67f22',
-    Error: '#e95459',
-  },
+  colors,
   title,
   className,
   emptyMessage = 'No Data',
 }: LoadChartProps) => {
   const chartData = typeof datas === 'function' ? datas?.(colors) : datas;
   const chartComponent = React.useRef<IChart>(null);
+  const prevData = React.useRef<LoadChartDataType>({} as LoadChartDataType);
 
   React.useEffect(() => {
     const chart = chartComponent.current?.instance;
     const newColumns = getColumns();
+    const prevKeys = Object.keys(prevData.current).slice(1);
+    const currKeys = Object.keys(chartData).slice(1);
+    const removedKeys = prevKeys.filter((key: string) => !currKeys.includes(key));
+    const unload = prevKeys.length === 0 ? false : removedKeys.length !== 0;
 
-    chart?.config('data.color', getColorOption());
     chart?.config('data.groups', getGroupsOption());
     chart?.config('axis.y.max', getMaxTickValue(getColumns() as number[][], 1));
-    chart?.load({ columns: newColumns });
+    chart?.load({ columns: newColumns, colors, unload });
+
+    prevData.current = chartData;
   }, [datas, colors]);
 
   const getColumns = () => {
@@ -58,14 +59,8 @@ export const LoadChart = ({
     return keys.map((key) => [key, ...(chartData[key] || [])]);
   };
 
-  const getColorOption = () => {
-    return (defaultColor: string, { id }: { id: string }) => {
-      return colors?.[id] ? colors?.[id] : defaultColor;
-    };
-  };
-
   const getGroupsOption = () => {
-    return [Object.keys(datas).filter((key) => key !== 'dates')];
+    return [Object.keys(chartData).filter((key) => key !== 'dates')];
   };
 
   const getInitialOptions = (): ChartOptions => {
@@ -81,6 +76,7 @@ export const LoadChart = ({
           },
         },
         groups: getGroupsOption(),
+        order: null,
         type: areaStep(),
         x: 'dates',
       },
@@ -134,6 +130,9 @@ export const LoadChart = ({
         format: {
           value: (v: number) => addCommas(v.toString()),
         },
+      },
+      transition: {
+        duration: 0,
       },
     };
   };
